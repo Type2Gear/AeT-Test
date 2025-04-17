@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heart Rate Drift Test Analyzer</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Heart Rate Drift Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fit-file-parser@1.1.6/dist/fit-file-parser.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gpxparser@3.0.0/gpxparser.min.js"></script>
     <style>
         /* Base styles */
         body {
@@ -249,121 +247,617 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Heart Rate Drift Test Analyzer</h1>
-            <div class="nav-tabs">
-                <a href="index.html" class="active">Analyzer</a>
-                <a href="what_is_this.html">What is this?</a>
-                <a href="how_to_use.html">How to use</a>
+        <nav class="nav nav-tabs">
+            <a class="nav-link active" href="/">Analyzer</a>
+            <a class="nav-link" href="/what-is-this">What is this?</a>
+            <a class="nav-link" href="/how-to-use">How can I use this?</a>
+        </nav>
+
+        <div class="section-header">
+            <div>
+                <h1>Heart Rate Drift Test Analyzer</h1>
+                <p>Upload the .fit or .gpx file from your heart rate drift test to identify your aerobic threshold (the top of your zone 2 in a 5 zone heart rate model, and the heart rate you should stay under for easy runs)</p>
             </div>
         </div>
 
-        <div class="upload-section">
-            <h2>Upload your workout file</h2>
-            <p>Upload a .fit or .gpx file from your workout to analyze your heart rate drift.</p>
-            <input type="file" id="fileInput" accept=".fit,.gpx" style="display: none;">
-            <button id="uploadButton" class="btn btn-primary">Upload .gpx or .fit File</button>
-        </div>
-
-        <div id="previewSection" class="preview-section" style="display: none;">
-            <h2>Workout Preview</h2>
-            <p>Use the sliders below to select the sections you want to compare.</p>
-            <div class="chart-container">
-                <canvas id="previewChart"></canvas>
-            </div>
-            <div class="range-controls">
-                <div class="range-group">
-                    <label for="startRange">Start Time:</label>
-                    <input type="range" id="startRange" min="0" max="3600" value="0" class="form-range">
-                    <span id="startTime">00:00:00</span>
-                </div>
-                <div class="range-group">
-                    <label for="endRange">End Time:</label>
-                    <input type="range" id="endRange" min="0" max="3600" value="1800" class="form-range">
-                    <span id="endTime">00:30:00</span>
-                </div>
-                <button id="analyzeButton" class="btn btn-primary">Analyze Sections</button>
-            </div>
-        </div>
-
-        <div id="resultsSection" class="results-section" style="display: none;">
-            <h2>Analysis Results</h2>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Metric</th>
-                            <th>Section 1</th>
-                            <th>Section 2</th>
-                            <th>Difference</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Average Heart Rate (BPM)</td>
-                            <td id="section1Hr">-</td>
-                            <td id="section2Hr">-</td>
-                            <td id="hrDiff">-</td>
-                        </tr>
-                        <tr>
-                            <td>Average Pace (min/km)</td>
-                            <td id="section1Pace">-</td>
-                            <td id="section2Pace">-</td>
-                            <td>-</td>
-                        </tr>
-                        <tr>
-                            <td>Heart Rate Change (%)</td>
-                            <td colspan="2">-</td>
-                            <td id="hrPercentDiff">-</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="phrSection" style="display: none;">
-                <h3>Pace-to-Heart Rate Ratio</h3>
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Metric</th>
-                                <th>Section 1</th>
-                                <th>Section 2</th>
-                                <th>Change (%)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Pace/HR Ratio</td>
-                                <td id="phr1">-</td>
-                                <td id="phr2">-</td>
-                                <td id="phrDiff">-</td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex align-items-center">
+                    <div class="file-upload me-3">
+                        <input type="file" id="fileInput" accept=".fit,.gpx" style="display: none;">
+                        <button class="btn btn-primary" id="uploadBtn">Upload .gpx or .fit File</button>
+                    </div>
+                    <div id="fileInfo" class="text-muted"></div>
                 </div>
             </div>
         </div>
+
+        <div id="previewSection" style="display: none;">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Select the test section of your workout</h5>
+                    <p class="text-muted mb-0 mt-2">Exclude any warm up and cool down. The selected section should be at least 45 minutes and ideally 1 hour.
+
+                    </p>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container mb-4">
+                        <canvas id="previewChart"></canvas>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="sectionStart">Section start time</label>
+                            <input type="range" class="form-range" id="sectionStart" min="0" max="100" value="0">
+                            <div class="time-input-group">
+                                <input type="text" class="form-control" id="sectionStartInput" placeholder="HH:MM:SS">
+                                <span class="time-display" id="sectionStartTime">00:00:00</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="sectionEnd">Section end time</label>
+                            <input type="range" class="form-range" id="sectionEnd" min="0" max="100" value="100">
+                            <div class="time-input-group">
+                                <input type="text" class="form-control" id="sectionEndInput" placeholder="HH:MM:SS">
+                                <span class="time-display" id="sectionEndTime">00:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="analyze-button mt-4">
+                        <button class="btn btn-primary" id="analyzeBtn">Analyze my test</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sectionInfo" class="section-info" style="display: none;">
+                <h5>Selected Section</h5>
+                <p>Start: <strong id="sectionInfoStart">00:00:00</strong></p>
+                <p>End: <strong id="sectionInfoEnd">00:00:00</strong></p>
+                <p>Duration: <strong id="sectionInfoDuration">00:00:00</strong></p>
+                <p>First half: <strong id="section1Info">00:00:00 to 00:00:00</strong></p>
+                <p>Second half: <strong id="section2Info">00:00:00 to 00:00:00</strong></p>
+            </div>
+
+            <div id="comparisonResults" class="comparison-results" style="display: none;">
+                <h5>Comparison Results</h5>
+                <div id="comparisonContent"></div>
+            </div>
+
+            <div id="paceHeartRateAnalysis" class="comparison-results" style="display: none;">
+                <h5>Pace-to-Heart Rate Analysis</h5>
+                <div id="paceHeartRateAnalysisContent"></div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading"></div>
     </div>
 
-    <script src="../static/js/heart_rate_analyzer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Wait for all scripts to load before initializing
-        function checkLibrariesLoaded() {
-            if (typeof Chart === 'undefined' || 
-                typeof FitParser === 'undefined' || 
-                typeof GPXParser === 'undefined') {
-                console.error('Some libraries not loaded yet');
-                setTimeout(checkLibrariesLoaded, 100);
+        let previewChart = null;
+        let previewData = null;
+        let uploadedFile = null;
+
+        function formatTime(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function formatPace(minutesPerKm) {
+            if (!minutesPerKm) return 'N/A';
+            const totalSeconds = minutesPerKm * 60;
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = Math.floor(totalSeconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function parseTime(timeStr) {
+            if (!timeStr) return 0;
+            
+            // Handle HH:MM:SS format
+            const parts = timeStr.split(':');
+            if (parts.length === 3) {
+                const [hrs, mins, secs] = parts.map(Number);
+                return hrs * 3600 + mins * 60 + secs;
+            }
+            
+            // Handle MM:SS format
+            if (parts.length === 2) {
+                const [mins, secs] = parts.map(Number);
+                return mins * 60 + secs;
+            }
+            
+            return 0;
+        }
+
+        function updateRangeLabels() {
+            if (!previewData) return;
+            
+            const totalTime = previewData.total_time;
+            const start = document.getElementById('sectionStart').value * totalTime / 100;
+            const end = document.getElementById('sectionEnd').value * totalTime / 100;
+            
+            // Update the displayed times
+            const startTimeElement = document.getElementById('sectionStartTime');
+            const endTimeElement = document.getElementById('sectionEndTime');
+            
+            if (startTimeElement) startTimeElement.textContent = formatTime(start);
+            if (endTimeElement) endTimeElement.textContent = formatTime(end);
+            
+            // Only update input fields if they're empty or if the slider was just moved
+            const startInputElement = document.getElementById('sectionStartInput');
+            const endInputElement = document.getElementById('sectionEndInput');
+            
+            // Check if the input fields are empty or if they were just updated by the slider
+            if (startInputElement && (!startInputElement.value || startInputElement.dataset.autoUpdate === 'true')) {
+                startInputElement.value = formatTime(start);
+                startInputElement.dataset.autoUpdate = 'false';
+            }
+            
+            if (endInputElement && (!endInputElement.value || endInputElement.dataset.autoUpdate === 'true')) {
+                endInputElement.value = formatTime(end);
+                endInputElement.dataset.autoUpdate = 'false';
+            }
+            
+            // Calculate the midpoint
+            const midpoint = start + (end - start) / 2;
+            
+            // Update section info
+            const sectionInfoStart = document.getElementById('sectionInfoStart');
+            const sectionInfoEnd = document.getElementById('sectionInfoEnd');
+            const sectionInfoDuration = document.getElementById('sectionInfoDuration');
+            const section1Info = document.getElementById('section1Info');
+            const section2Info = document.getElementById('section2Info');
+            
+            if (sectionInfoStart) sectionInfoStart.textContent = formatTime(start);
+            if (sectionInfoEnd) sectionInfoEnd.textContent = formatTime(end);
+            if (sectionInfoDuration) sectionInfoDuration.textContent = formatTime(end - start);
+            if (section1Info) section1Info.textContent = `${formatTime(start)} to ${formatTime(midpoint)}`;
+            if (section2Info) section2Info.textContent = `${formatTime(midpoint)} to ${formatTime(end)}`;
+            
+            if (previewChart) {
+                previewChart.options.plugins.annotation.annotations = {
+                    section: {
+                        type: 'box',
+                        xMin: start,
+                        xMax: end,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    section1: {
+                        type: 'box',
+                        xMin: start,
+                        xMax: midpoint,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    section2: {
+                        type: 'box',
+                        xMin: midpoint,
+                        xMax: end,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    midpoint: {
+                        type: 'line',
+                        xMin: midpoint,
+                        xMax: midpoint,
+                        borderColor: 'rgba(0, 0, 0, 0.5)',
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    }
+                };
+                previewChart.update();
+            }
+        }
+
+        function updateFromInput(inputId, sliderId) {
+            if (!previewData) return;
+            
+            const totalTime = previewData.total_time;
+            const timeStr = document.getElementById(inputId).value;
+            const seconds = parseTime(timeStr);
+            
+            // Update the slider
+            const percentage = (seconds / totalTime) * 100;
+            document.getElementById(sliderId).value = Math.min(100, Math.max(0, percentage));
+            
+            // Mark this input as manually updated
+            document.getElementById(inputId).dataset.autoUpdate = 'false';
+            
+            // Get the current values for both start and end
+            const startInput = document.getElementById('sectionStartInput');
+            const endInput = document.getElementById('sectionEndInput');
+            const startSlider = document.getElementById('sectionStart');
+            const endSlider = document.getElementById('sectionEnd');
+            
+            let start, end;
+            
+            // Get the current values based on which input is being updated
+            if (inputId === 'sectionStartInput') {
+                start = seconds;
+                end = parseTime(endInput.value) || (endSlider.value * totalTime / 100);
+            } else {
+                start = parseTime(startInput.value) || (startSlider.value * totalTime / 100);
+                end = seconds;
+            }
+            
+            // Ensure start is before end
+            if (start >= end) {
+                if (inputId === 'sectionStartInput') {
+                    // If start is after end, set end to start + 5 minutes
+                    const newEnd = start + 300; // 5 minutes in seconds
+                    if (newEnd <= totalTime) {
+                        endSlider.value = (newEnd / totalTime) * 100;
+                        endInput.value = formatTime(newEnd);
+                        end = newEnd;
+                    } else {
+                        // If 5 minutes would exceed total time, set end to total time
+                        endSlider.value = 100;
+                        endInput.value = formatTime(totalTime);
+                        end = totalTime;
+                    }
+                } else {
+                    // If end is before start, set start to end - 5 minutes
+                    const newStart = end - 300; // 5 minutes in seconds
+                    if (newStart >= 0) {
+                        startSlider.value = (newStart / totalTime) * 100;
+                        startInput.value = formatTime(newStart);
+                        start = newStart;
+                    } else {
+                        // If 5 minutes would be less than 0, set start to 0
+                        startSlider.value = 0;
+                        startInput.value = formatTime(0);
+                        start = 0;
+                    }
+                }
+            }
+            
+            // Calculate the midpoint
+            const midpoint = start + (end - start) / 2;
+            
+            // Update the displayed times
+            const startTimeElement = document.getElementById('sectionStartTime');
+            const endTimeElement = document.getElementById('sectionEndTime');
+            
+            if (startTimeElement) startTimeElement.textContent = formatTime(start);
+            if (endTimeElement) endTimeElement.textContent = formatTime(end);
+            
+            // Update section info
+            const sectionInfoStart = document.getElementById('sectionInfoStart');
+            const sectionInfoEnd = document.getElementById('sectionInfoEnd');
+            const sectionInfoDuration = document.getElementById('sectionInfoDuration');
+            const section1Info = document.getElementById('section1Info');
+            const section2Info = document.getElementById('section2Info');
+            
+            if (sectionInfoStart) sectionInfoStart.textContent = formatTime(start);
+            if (sectionInfoEnd) sectionInfoEnd.textContent = formatTime(end);
+            if (sectionInfoDuration) sectionInfoDuration.textContent = formatTime(end - start);
+            if (section1Info) section1Info.textContent = `${formatTime(start)} to ${formatTime(midpoint)}`;
+            if (section2Info) section2Info.textContent = `${formatTime(midpoint)} to ${formatTime(end)}`;
+            
+            // Update the chart
+            if (previewChart) {
+                previewChart.options.plugins.annotation.annotations = {
+                    section: {
+                        type: 'box',
+                        xMin: start,
+                        xMax: end,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    section1: {
+                        type: 'box',
+                        xMin: start,
+                        xMax: midpoint,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    section2: {
+                        type: 'box',
+                        xMin: midpoint,
+                        xMax: end,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    midpoint: {
+                        type: 'line',
+                        xMin: midpoint,
+                        xMax: midpoint,
+                        borderColor: 'rgba(0, 0, 0, 0.5)',
+                        borderWidth: 2,
+                        borderDash: [5, 5]
+                    }
+                };
+                previewChart.update();
+            }
+        }
+
+        document.getElementById('uploadBtn').addEventListener('click', async function(e) {
+            e.preventDefault();
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            const fileInput = document.getElementById('fileInput');
+            const loading = document.getElementById('loading');
+            const previewSection = document.getElementById('previewSection');
+            const errorMessage = document.getElementById('fileInfo');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            // Check if a file was selected
+            if (!fileInput.files || fileInput.files.length === 0) {
+                errorMessage.textContent = 'Please select a file first';
+                errorMessage.style.display = 'block';
+                uploadBtn.textContent = 'Choose File';
                 return;
             }
             
-            // All libraries are loaded, initialize the analyzer
-            const analyzer = new HeartRateAnalyzer();
-        }
+            // Update button text
+            uploadBtn.textContent = fileInput.files[0].name;
+            
+            loading.style.display = 'block';
+            previewSection.style.display = 'none';
+            errorMessage.textContent = '';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                
+                const response = await fetch('/preview', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Store the preview data and uploaded file
+                previewData = data.preview_data;
+                uploadedFile = fileInput.files[0];
+                
+                // Create the preview chart
+                const ctx = document.getElementById('previewChart').getContext('2d');
+                if (previewChart) {
+                    previewChart.destroy();
+                }
+                
+                previewChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: previewData.timestamps,
+                        datasets: [{
+                            label: 'Heart Rate',
+                            data: previewData.heart_rate,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1,
+                            yAxisID: 'y'
+                        }, {
+                            label: 'Speed',
+                            data: previewData.speed,
+                            borderColor: 'rgb(255, 99, 132)',
+                            tension: 0.1,
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Time (seconds)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return formatTime(value);
+                                    }
+                                }
+                            },
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Heart Rate (BPM)'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Speed (km/h)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            annotation: {
+                                annotations: {}
+                            }
+                        }
+                    }
+                });
+                
+                // Show the preview section and update range labels
+                previewSection.style.display = 'block';
+                document.getElementById('sectionInfo').style.display = 'block';
+                updateRangeLabels();
+                
+                // Update file info
+                errorMessage.textContent = `File loaded: ${uploadedFile.name}`;
+                errorMessage.style.display = 'block';
+                
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+                uploadBtn.textContent = 'Choose File';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
 
-        // Start checking when the page loads
-        window.addEventListener('load', checkLibrariesLoaded);
+        // Add event listeners for range inputs
+        ['sectionStart', 'sectionEnd'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function() {
+                // Mark the corresponding input as auto-updated
+                const inputId = id === 'sectionStart' ? 'sectionStartInput' : 'sectionEndInput';
+                document.getElementById(inputId).dataset.autoUpdate = 'true';
+                updateRangeLabels();
+            });
+        });
+
+        // Add event listeners for text inputs
+        ['sectionStartInput', 'sectionEndInput'].forEach(id => {
+            document.getElementById(id).addEventListener('change', function() {
+                const sliderId = id === 'sectionStartInput' ? 'sectionStart' : 'sectionEnd';
+                updateFromInput(id, sliderId);
+            });
+        });
+
+        document.getElementById('analyzeBtn').addEventListener('click', async function() {
+            if (!previewData || !uploadedFile) return;
+            
+            const loading = document.getElementById('loading');
+            const resultsContainer = document.getElementById('comparisonResults');
+            const errorMessage = document.getElementById('fileInfo');
+            
+            loading.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            errorMessage.textContent = '';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', uploadedFile);
+                
+                const totalTime = previewData.total_time;
+                const start = document.getElementById('sectionStart').value * totalTime / 100;
+                const end = document.getElementById('sectionEnd').value * totalTime / 100;
+                const midpoint = start + (end - start) / 2;
+                
+                // Add the section data to the FormData
+                formData.append('section1_start', formatTime(start));
+                formData.append('section1_end', formatTime(midpoint));
+                formData.append('section2_start', formatTime(midpoint));
+                formData.append('section2_end', formatTime(end));
+                
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                // Create the comparison results HTML
+                const comparisonContent = document.getElementById('comparisonContent');
+                comparisonContent.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">First half</h5>
+                            <p>Average Heart Rate: <strong>${result.results.section1.average_hr.toFixed(1)} BPM</strong></p>
+                            <p>Average Pace:</p>
+                            <ul>
+                                <li><strong>${formatPace(result.results.section1.average_pace)} min/km</strong></li>
+                                <li><strong>${formatPace(result.results.section1.average_pace * 1.60934)} min/mile</strong></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Second half</h5>
+                            <p>Average Heart Rate: <strong>${result.results.section2.average_hr.toFixed(1)} BPM</strong></p>
+                            <p>Average Pace:</p>
+                            <ul>
+                                <li><strong>${formatPace(result.results.section2.average_pace)} min/km</strong></li>
+                                <li><strong>${formatPace(result.results.section2.average_pace * 1.60934)} min/mile</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr class="my-4">
+                    <h5 class="mb-3">Differences</h5>
+                    <p>Heart Rate Difference: <strong>${result.results.heart_rate.difference.toFixed(1)} BPM (${result.results.heart_rate.percent_difference.toFixed(1)}%)</strong></p>
+                    <p>Pace-to-Heart Rate Ratio:</p>
+                    <ul>
+                        <li>First half: <strong>${result.results.pace_heart_rate_ratio.section1.toFixed(4)} min/km/BPM</strong></li>
+                        <li>Second half: <strong>${result.results.pace_heart_rate_ratio.section2.toFixed(4)} min/km/BPM</strong></li>
+                        <li>Difference: <strong>${result.results.pace_heart_rate_ratio.percent_difference.toFixed(1)}%</strong></li>
+                    </ul>
+                `;
+                
+                // Update the pace-to-heart rate analysis section
+                const paceHeartRateAnalysis = document.getElementById('paceHeartRateAnalysis');
+                paceHeartRateAnalysis.style.display = 'block';
+                
+                const percentDiff = result.results.pace_heart_rate_ratio.percent_difference;
+                let alertClass, alertTitle, alertMessage, recommendations;
+                
+                if (percentDiff > 5) {
+                    const avgHR = (result.results.section1.average_hr + result.results.section2.average_hr) / 2;
+                    alertClass = 'alert-warning';
+                    alertTitle = 'Aerobic Threshold Analysis - Significant Drift';
+                    alertMessage = `Based on a calculated pace-to-heart rate ratio increase of ${percentDiff.toFixed(1)}%, your aerobic threshold (AeT, top of zone 2 in a 5 zone model) is below ${avgHR.toFixed(0)} BPM.`;
+                    recommendations = `
+                        <p>A drift higher than 5% suggests that your chosen heart rate was too high. Retry this test on a different day with a lower target heart rate.</p>
+                    `;
+                } else if (percentDiff < 3.5) {
+                    const avgHR = (result.results.section1.average_hr + result.results.section2.average_hr) / 2;
+                    alertClass = 'alert-warning';
+                    alertTitle = 'Aerobic Threshold Analysis';
+                    alertMessage = `Based on a calculated pace-to-heart rate ratio increase of ${percentDiff.toFixed(1)}%, your aerobic threshold (AeT, top of zone 2 in a 5 zone model) is above ${avgHR.toFixed(0)} BPM. Retry this test on a different day using a target heart rate of ${(avgHR + 5).toFixed(0)} BPM.`;
+                    recommendations = '';
+                } else {
+                    alertClass = 'alert-success';
+                    alertTitle = 'Aerobic Threshold Identified';
+                    alertMessage = `Based on a calculated pace-to-heart rate ratio increase of ${percentDiff.toFixed(1)}%, your aerobic threshold (AeT, top of zone 2 in a 5 zone model) should be set at ${result.results.section2.average_hr.toFixed(0)} BPM.`;
+                    recommendations = `
+                        <p>This amount of drift is expected when you are working at your aerobic threshold. Use this heart rate to set your heart rate zones, and retest every 6 to 8 weeks.</p>
+                        <p>Keep up the good work!</p>
+                    `;
+                }
+                
+                paceHeartRateAnalysis.innerHTML = `
+                    <hr class="my-4">
+                    <div class="alert ${alertClass} mb-0">
+                        <h5 class="alert-heading">${alertTitle}</h5>
+                        <p>${alertMessage}</p>
+                        ${recommendations}
+                    </div>
+                `;
+                
+                resultsContainer.style.display = 'block';
+                
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html> 

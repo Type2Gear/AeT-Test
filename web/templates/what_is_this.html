@@ -3,75 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What is this? - Heart Rate Drift Test Analyzer</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Heart Rate Drift Analyzer - What is this?</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* Base styles */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             line-height: 1.6;
             color: #333;
             background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
 
+        /* Header styles */
         .header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
         }
 
         .header h1 {
             font-size: 2.5rem;
-            color: #2c3e50;
+            font-weight: 700;
+            color: #000000;
             margin-bottom: 1rem;
         }
 
+        .header p {
+            font-size: 1.2rem;
+            color: #6c757d;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Tab styling */
         .nav-tabs {
+            border-bottom: none;
+            margin-bottom: 2rem;
             display: flex;
-            justify-content: center;
-            gap: 1rem;
+            justify-content: flex-start;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            transition: color 0.2s ease;
+            font-weight: 500;
+            width: 180px;
+            text-align: center;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #000000;
+            border-bottom: 2px solid #000000;
+            background: none;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border: none;
+            color: #000000;
+        }
+
+        /* Content styling */
+        .content-section {
             margin-bottom: 2rem;
         }
 
-        .nav-tabs a {
-            color: #6c757d;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.25rem;
-            transition: all 0.2s;
-        }
-
-        .nav-tabs a:hover {
-            color: #2c3e50;
-            background-color: #e9ecef;
-        }
-
-        .nav-tabs a.active {
-            color: #2c3e50;
-            background-color: #e9ecef;
-            font-weight: 500;
-        }
-
-        .content-section {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
         .content-section h2 {
-            color: #2c3e50;
-            margin-bottom: 1.5rem;
             font-size: 1.8rem;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 1.5rem;
         }
 
         .content-section p {
             margin-bottom: 1rem;
-            color: #495057;
+            color: #333;
         }
 
         .content-section ul {
@@ -81,64 +100,45 @@
 
         .content-section li {
             margin-bottom: 0.5rem;
-            color: #495057;
         }
 
-        .content-section .divider {
-            height: 1px;
-            background-color: #dee2e6;
+        .divider {
+            border-top: 1px solid #dee2e6;
             margin: 2rem 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>What is this?</h1>
-            <div class="nav-tabs">
-                <a href="index.html">Analyzer</a>
-                <a href="what_is_this.html" class="active">What is this?</a>
-                <a href="how_to_use.html">How to use</a>
+        <nav class="nav nav-tabs">
+            <a class="nav-link" href="/">Analyzer</a>
+            <a class="nav-link active" href="/what-is-this">What is this?</a>
+            <a class="nav-link" href="/how-to-use">How can I use this?</a>
+        </nav>
+
+        <div class="section-header">
+            <div>
+                <h1>A free tool to analyze outdoor heart rate drift tests</h1>
+                <p>The simplest way to determine what "easy running" means for you.</p>
             </div>
         </div>
 
-        <div class="content-section">
-            <h2>Heart Rate Drift Test</h2>
-            <p>The Heart Rate Drift Test is a simple but effective way to identify your aerobic threshold (AeT) - the heart rate at which you can maintain steady-state exercise without significant cardiovascular drift.</p>
+        <h2>What is a Heart Rate Drift test?</h2>
+        <p>A heart rate drift test is a simple and cheap way to determine your aerobic threshold. It is a one-hour test where you run outdoors at a steady heart and record your pace. More inforation about the specifics of running a heart rate drift test can be found on the "How can I use this?" page.</p>
+        
+        <p>In a well-trained aerobic system, when holding your heart rate stable at a moderate intensity during a one-hour workout, you should see minimal reduction in pace. However, when you exceed your aerobic threshold (the top of Zone 2 in a 5-zone heart rate model), your pace will begin to slow even while holding the same heart rate. This reduction in pace reletive to heart rate is what we are measuring and reading out on.</p>
 
-            <h2>What is Aerobic Threshold?</h2>
-            <p>Your aerobic threshold is the highest heart rate at which you can exercise while primarily using your aerobic energy system. It's often considered the top of Zone 2 in a 5-zone heart rate model. This is the heart rate you should stay under for easy runs and base training.</p>
+        <hr class="my-4">
 
-            <div class="divider"></div>
-
-            <h2>How the Test Works</h2>
-            <p>The test involves:</p>
-            <ul>
-                <li>Running at a constant heart rate for 45-60 minutes</li>
-                <li>Comparing your pace-to-heart rate ratio between the first and second half of the test</li>
-                <li>Analyzing the drift in this ratio to determine if you were above, at, or below your aerobic threshold</li>
-            </ul>
-
-            <h2>Why This Matters</h2>
-            <p>Training at or below your aerobic threshold:</p>
-            <ul>
-                <li>Improves your body's ability to use fat as fuel</li>
-                <li>Builds your aerobic base without excessive stress</li>
-                <li>Helps prevent overtraining and burnout</li>
-                <li>Is the foundation for all endurance training</li>
-            </ul>
-
-            <div class="divider"></div>
-
-            <h2>About This Tool</h2>
-            <p>This tool helps you analyze your heart rate drift test by:</p>
-            <ul>
-                <li>Processing your workout data from .fit or .gpx files</li>
-                <li>Calculating your pace-to-heart rate ratio for different sections of your workout</li>
-                <li>Providing clear feedback on whether you were above, at, or below your aerobic threshold</li>
-                <li>Helping you determine the optimal heart rate for your easy runs</li>
-            </ul>
-        </div>
+        <h2>What is my aerobic threshold and why does it matter?</h2>
+        <p>Generally speaking, your aerobic threshold is the highest intensity (here, quantified by heart rate) at which your body is primarily using fat for fuel, with minimal stress on your cardiovascular system. This is helpful to know for a variety of reasons:</p>
+        <ul>
+            <li><strong>Correct Training Intensity:</strong> Modern endurance training stipulates that the majority of your training (typically cited at ~80% of your total training volume) should be "easy". Your heart rate at your aerobic threshold is one of the simplest and most accurate ways to quantify this.</li>
+            <li><strong>Proper Race Pacing:</strong> By knowing your aerobic threshold, you can ensure that you are not exceeding your bodies capabiliteies during long races (typically cited at 3 hours or longer). When working above your aerobic threshold, your body uses gluclose stored in muscles as its main fuel source, which is much less plentiful than fat. Therefore, running above your aerobic threshold for a prolonged period of time will result in a rapid depletion of glycogen stores, leading to fatigue and a slower final time.</li>
+            <li><strong>Avoiding Overtraining:</strong> By keeping the majority of your training below your aerobic threshold, you can avoid injuries and burnout.</li>
+        </ul>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

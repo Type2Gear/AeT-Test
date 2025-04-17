@@ -3,75 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>How to use - Heart Rate Drift Test Analyzer</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Heart Rate Drift Analyzer - How to Use</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        /* Base styles */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             line-height: 1.6;
             color: #333;
             background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
         }
 
+        /* Header styles */
         .header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 3rem;
         }
 
         .header h1 {
             font-size: 2.5rem;
-            color: #2c3e50;
+            font-weight: 700;
+            color: #000000;
             margin-bottom: 1rem;
         }
 
+        .header p {
+            font-size: 1.2rem;
+            color: #6c757d;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Tab styling */
         .nav-tabs {
+            border-bottom: none;
+            margin-bottom: 2rem;
             display: flex;
-            justify-content: center;
-            gap: 1rem;
+            justify-content: flex-start;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            transition: color 0.2s ease;
+            font-weight: 500;
+            width: 180px;
+            text-align: center;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #000000;
+            border-bottom: 2px solid #000000;
+            background: none;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border: none;
+            color: #000000;
+        }
+
+        /* Content styling */
+        .content-section {
             margin-bottom: 2rem;
         }
 
-        .nav-tabs a {
-            color: #6c757d;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0.25rem;
-            transition: all 0.2s;
-        }
-
-        .nav-tabs a:hover {
-            color: #2c3e50;
-            background-color: #e9ecef;
-        }
-
-        .nav-tabs a.active {
-            color: #2c3e50;
-            background-color: #e9ecef;
-            font-weight: 500;
-        }
-
-        .content-section {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
         .content-section h2 {
-            color: #2c3e50;
-            margin-bottom: 1.5rem;
             font-size: 1.8rem;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 1.5rem;
         }
 
         .content-section p {
             margin-bottom: 1rem;
-            color: #495057;
+            color: #333;
         }
 
         .content-section ul {
@@ -81,127 +100,83 @@
 
         .content-section li {
             margin-bottom: 0.5rem;
-            color: #495057;
         }
 
-        .content-section .divider {
-            height: 1px;
-            background-color: #dee2e6;
+        .divider {
+            border-top: 1px solid #dee2e6;
             margin: 2rem 0;
-        }
-
-        .step {
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background-color: #f8f9fa;
-            border-radius: 0.5rem;
-        }
-
-        .step h3 {
-            color: #2c3e50;
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
-        }
-
-        .step p {
-            margin-bottom: 1rem;
-        }
-
-        .step ul {
-            margin-bottom: 0;
-        }
-
-        .tips {
-            background-color: #e3f2fd;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin-top: 2rem;
-        }
-
-        .tips h3 {
-            color: #1976d2;
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>How to use</h1>
-            <div class="nav-tabs">
-                <a href="index.html">Analyzer</a>
-                <a href="what_is_this.html">What is this?</a>
-                <a href="how_to_use.html" class="active">How to use</a>
+        <nav class="nav nav-tabs">
+            <a class="nav-link" href="/">Analyzer</a>
+            <a class="nav-link" href="/what-is-this">What is this?</a>
+            <a class="nav-link active" href="/how-to-use">How can I use this?</a>
+        </nav>
+
+        <div class="section-header">
+            <div>
+                <h1>How to use this tool</h1>
+                <p>A step-by-step guide to performing and analyzing a heart rate drift test</p>
             </div>
         </div>
 
-        <div class="content-section">
-            <h2>Running the Test</h2>
-            
-            <div class="step">
-                <h3>1. Preparation</h3>
-                <p>Before running the test:</p>
-                <ul>
-                    <li>Ensure you're well-rested and recovered</li>
-                    <li>Have a light meal 2-3 hours before</li>
-                    <li>Stay hydrated</li>
-                    <li>Choose a flat route or track</li>
-                    <li>Make sure your heart rate monitor is working properly</li>
-                </ul>
-            </div>
+        <h2>Prepare for Your Workout</h2>
+        <p>Before starting your heart rate drift test, follow these preparation steps:</p>
+        <ul>
+            <li><strong>Choose the right time:</strong> Perform the test when you're well-rested and haven't done intense exercise in the previous 24 hours. It is best to not have eaten in the 3 hours before the test. Avoiding high heat and humidity will also improve the accuracy of your test.</li>
+            <li><strong>Select your target heart rate:</strong> Choose a heart rate that feels moderate - you should be able to maintain a conversation but feel like you're working. If you don't know where to start, your "MAF HR" (180-[your age]) is one option.</li>
+            <li><strong>Gather your equipment:</strong> Make sure your heart rate monitor is fully charged and properly fitted. Arm or chest straps are preferred, but optical heart rate from a watch will work. If you do not have a heart rate monitor or smartwatch, you can purchase the Wahoo TICKR Heart Rate monitor (~$50) and connect it to the Wahoo Fitness App (compatible with both iOS and Android).</li>
+            <li><strong>Plan your route:</strong> Choose a flat course to minimize pace variations due to terrain. Loops around parks, tracks, or long flat roads are ideal.</li>
+        </ul>
 
-            <div class="step">
-                <h3>2. The Test</h3>
-                <p>During the test:</p>
-                <ul>
-                    <li>Start with a 10-15 minute warm-up</li>
-                    <li>Choose a target heart rate that feels moderate (you should be able to hold a conversation)</li>
-                    <li>Run for 45-60 minutes at this constant heart rate</li>
-                    <li>Record your entire workout using your GPS watch or fitness app</li>
-                </ul>
-            </div>
+        <hr class="my-4">
 
-            <div class="step">
-                <h3>3. Analyzing the Results</h3>
-                <p>After the test:</p>
-                <ul>
-                    <li>Export your workout file (.fit or .gpx format)</li>
-                    <li>Upload the file to this analyzer</li>
-                    <li>Use the sliders to select the test portion (excluding warm-up)</li>
-                    <li>Click "Analyze Sections" to see your results</li>
-                </ul>
-            </div>
+        <h2>Perform the Test</h2>
+        <p>During your heart rate drift test:</p>
+        <ul>
+            <li><strong>Warm up properly:</strong> Start with 10-15 minutes of easy running to get your body ready, ideally remaining at least 10 BPM below your target heart rate.</li>
+            <li><strong>Maintain a steady heart rate:</strong> After your warm up, slowly increase your effort until you hit your target heart rate. Remain at this heart rate for one hour, allowing your pace to change as needed.</li>
+            <li><strong>Avoid distractions:</strong> Focus on maintaining your target heart rate throughout the test. This will be boring.</li>
+            <li><strong>Optional: cool down:</strong> After the one-hour test period, cool down with 10-15 minutes of easy running.</li>
+        </ul>
 
-            <div class="tips">
-                <h3>Tips for Success</h3>
-                <ul>
-                    <li>Choose a day with moderate weather conditions</li>
-                    <li>Avoid running the test if you're feeling under the weather</li>
-                    <li>Don't eat or drink during the test (except water)</li>
-                    <li>Focus on maintaining a steady heart rate</li>
-                    <li>Ignore your pace - let it vary as needed to maintain the heart rate</li>
-                </ul>
-            </div>
+        <hr class="my-4">
 
-            <div class="divider"></div>
+        <h2>Upload Your Data</h2>
+        <p>After completing your test:</p>
+        <ul>
+            <li><strong>Export your workout:</strong> Download your workout file (.fit or .gpx format) from your fitness device or app.</li>
+            <li><strong>Upload to the analyzer:</strong> Use the file upload button on the main page to upload your workout file.</li>
+            <li><strong>Select the test section:</strong> Use the sliders to select the one-hour test portion of your workout, excluding warm-up and cool-down.</li>
+            <li><strong>Analyze your data:</strong> Click the "Analyze my test" button to process your data.</li>
+        </ul>
 
-            <h2>Understanding the Results</h2>
-            <p>The analyzer will show you:</p>
-            <ul>
-                <li>Your average heart rate and pace for each section</li>
-                <li>The change in your pace-to-heart rate ratio</li>
-                <li>Whether you were above, at, or below your aerobic threshold</li>
-                <li>Recommendations for your next test or training</li>
-            </ul>
+        <hr class="my-4">
 
-            <p>If your pace-to-heart rate ratio increased by:</p>
-            <ul>
-                <li><strong>Less than 3.5%:</strong> Your target heart rate was below your aerobic threshold. Try again with a higher heart rate.</li>
-                <li><strong>3.5-5%:</strong> You've found your aerobic threshold! Use this heart rate for your easy runs.</li>
-                <li><strong>More than 5%:</strong> Your target heart rate was above your aerobic threshold. Try again with a lower heart rate.</li>
-            </ul>
-        </div>
+        <h2>Interpret Your Results</h2>
+        <p>The analyzer will provide you with several key metrics:</p>
+        <ul>
+            <li><strong>Average heart rate:</strong> For both the first and second half of your test.</li>
+            <li><strong>Average pace:</strong> For both the first and second half of your test.</li>
+            <li><strong>Pace-to-heart rate ratio:</strong> A measure of your efficiency that helps determine your aerobic threshold.</li>
+            <li><strong>Percentage difference:</strong> The change in your pace-to-heart rate ratio between the first and second half.</li>
+        </ul>
+
+        <hr class="my-4">
+
+        <h2>Understanding Your Results</h2>
+        <p>The percentage difference across the two halves of your test in your pace-to-heart rate ratio is the key metric for determining your aerobic threshold:</p>
+        <ul>
+            <li><strong>3.5-5% difference:</strong> This is the ideal range, indicating you've identified your aerobic threshold.</li>
+            <li><strong>Less than 3.5% difference:</strong> Your target heart rate was below your aerobic threshold. Try the test again with a higher target heart rate.</li>
+            <li><strong>More than 5% difference:</strong> Your target heart rate was above your aerobic threshold. Try the test again with a lower target heart rate.</li>
+        </ul>
+        <p>If you have an inconclusive test, you can guess at your aerobic threshold by seeing how close you were to the 3.5-5% differene and roughly scaling your target heart rate up or down proportionally. For example, if your percentage difference was 5.2%, you may only need to move your target heart rate down by a few beats. Retest using that number to conrim it. Once you've identified your aerobic threshold, you can use this heart rate to set your training zones and optimize your endurance training.</p>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 
