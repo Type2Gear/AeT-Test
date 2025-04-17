@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Rate Drift Test Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fit-file-parser@1.1.6/dist/fit-file-parser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gpxparser@3.0.0/gpxparser.min.js"></script>
+    <style>
+        /* Base styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header styles */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #000000;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #6c757d;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Tab styling */
+        .nav-tabs {
+            border-bottom: none;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            transition: color 0.2s ease;
+            font-weight: 500;
+            width: 180px;
+            text-align: center;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #000000;
+            border-bottom: 2px solid #000000;
+            background: none;
+        }
+
+        .nav-tabs .nav-link:hover {
+            border: none;
+            color: #000000;
+        }
+
+        /* Section spacing */
+        .test-section-selector {
+            margin-bottom: 3rem;
+        }
+
+        .upload-section {
+            margin-bottom: 2rem;
+        }
+
+        .preview-section {
+            margin-bottom: 2rem;
+        }
+
+        .results-section {
+            margin-bottom: 2rem;
+        }
+
+        /* Form controls */
+        .form-control {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 0.5rem;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .form-control:focus {
+            border-color: #000000;
+            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.1);
+            outline: none;
+        }
+
+        /* Button styling */
+        .btn-primary {
+            background-color: #ffffff;
+            border: 1px solid #000000;
+            color: #000000;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        /* Table styling */
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            background-color: #ffffff;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #dee2e6;
+            text-align: left;
+        }
+
+        .table th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+
+        /* Range controls */
+        .range-controls {
+            margin: 1rem 0;
+        }
+
+        .range-controls label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e0e0e0;
+            outline: none;
+            margin: 1rem 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #000000;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #000000;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e0e0e0;
+        }
+
+        input[type="range"]::-moz-range-track {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e0e0e0;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]:focus::-webkit-slider-thumb {
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="range"]:focus::-moz-range-thumb {
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Results styling */
+        .results-container {
+            margin-top: 2rem;
+        }
+
+        .results-container h3 {
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .results-container p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Loading spinner */
+        .spinner-border {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 0.2em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
+        }
+
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Heart Rate Drift Test Analyzer</h1>
+            <div class="nav-tabs">
+                <a href="index.html" class="active">Analyzer</a>
+                <a href="what_is_this.html">What is this?</a>
+                <a href="how_to_use.html">How to use</a>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <h2>Upload your workout file</h2>
+            <p>Upload a .fit or .gpx file from your workout to analyze your heart rate drift.</p>
+            <input type="file" id="fileInput" accept=".fit,.gpx" style="display: none;">
+            <button id="uploadButton" class="btn btn-primary">Upload .gpx or .fit File</button>
+        </div>
+
+        <div id="previewSection" class="preview-section" style="display: none;">
+            <h2>Workout Preview</h2>
+            <p>Use the sliders below to select the sections you want to compare.</p>
+            <div class="chart-container">
+                <canvas id="previewChart"></canvas>
+            </div>
+            <div class="range-controls">
+                <div class="range-group">
+                    <label for="startRange">Start Time:</label>
+                    <input type="range" id="startRange" min="0" max="3600" value="0" class="form-range">
+                    <span id="startTime">00:00:00</span>
+                </div>
+                <div class="range-group">
+                    <label for="endRange">End Time:</label>
+                    <input type="range" id="endRange" min="0" max="3600" value="1800" class="form-range">
+                    <span id="endTime">00:30:00</span>
+                </div>
+                <button id="analyzeButton" class="btn btn-primary">Analyze Sections</button>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="results-section" style="display: none;">
+            <h2>Analysis Results</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Section 1</th>
+                            <th>Section 2</th>
+                            <th>Difference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Average Heart Rate (BPM)</td>
+                            <td id="section1Hr">-</td>
+                            <td id="section2Hr">-</td>
+                            <td id="hrDiff">-</td>
+                        </tr>
+                        <tr>
+                            <td>Average Pace (min/km)</td>
+                            <td id="section1Pace">-</td>
+                            <td id="section2Pace">-</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Heart Rate Change (%)</td>
+                            <td colspan="2">-</td>
+                            <td id="hrPercentDiff">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="phrSection" style="display: none;">
+                <h3>Pace-to-Heart Rate Ratio</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Section 1</th>
+                                <th>Section 2</th>
+                                <th>Change (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Pace/HR Ratio</td>
+                                <td id="phr1">-</td>
+                                <td id="phr2">-</td>
+                                <td id="phrDiff">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../static/js/heart_rate_analyzer.js"></script>
+    <script>
+        // Wait for all scripts to load before initializing
+        function checkLibrariesLoaded() {
+            if (typeof Chart === 'undefined' || 
+                typeof FitParser === 'undefined' || 
+                typeof GPXParser === 'undefined') {
+                console.error('Some libraries not loaded yet');
+                setTimeout(checkLibrariesLoaded, 100);
+                return;
+            }
+            
+            // All libraries are loaded, initialize the analyzer
+            const analyzer = new HeartRateAnalyzer();
+        }
+
+        // Start checking when the page loads
+        window.addEventListener('load', checkLibrariesLoaded);
+    </script>
+</body>
+</html> 
