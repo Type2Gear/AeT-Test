@@ -91,9 +91,31 @@ class HeartRateAnalyzer:
         if self.data is None:
             raise ValueError("No data loaded. Call load_data() first.")
             
-        # Convert time strings to datetime objects
-        start_dt = self.start_time + pd.Timedelta(seconds=float(start_time))
-        end_dt = self.start_time + pd.Timedelta(seconds=float(end_time))
+        # Convert time strings in HH:MM:SS format to seconds
+        def time_to_seconds(time_str):
+            if isinstance(time_str, (int, float)):
+                return float(time_str)
+            
+            # Parse HH:MM:SS format
+            parts = time_str.split(':')
+            if len(parts) == 3:
+                hours, minutes, seconds = map(float, parts)
+                return hours * 3600 + minutes * 60 + seconds
+            elif len(parts) == 2:
+                minutes, seconds = map(float, parts)
+                return minutes * 60 + seconds
+            else:
+                try:
+                    return float(time_str)
+                except ValueError:
+                    raise ValueError(f"Invalid time format: {time_str}. Use HH:MM:SS or seconds.")
+        
+        # Convert time strings to seconds and then to datetime objects
+        start_seconds = time_to_seconds(start_time)
+        end_seconds = time_to_seconds(end_time)
+        
+        start_dt = self.start_time + pd.Timedelta(seconds=start_seconds)
+        end_dt = self.start_time + pd.Timedelta(seconds=end_seconds)
         
         # Filter data for the section
         mask = (self.data['timestamp'] >= start_dt) & (self.data['timestamp'] <= end_dt)
@@ -132,6 +154,10 @@ class HeartRateAnalyzer:
         section1_avg = self.calculate_averages(section1_data)
         section2_avg = self.calculate_averages(section2_data)
         
+        # Calculate overall averages
+        combined_data = pd.concat([section1_data, section2_data])
+        overall_avg = self.calculate_averages(combined_data)
+        
         # Calculate differences
         hr_diff = section2_avg['average_hr'] - section1_avg['average_hr']
         hr_percent_diff = (hr_diff / section1_avg['average_hr']) * 100 if section1_avg['average_hr'] else None
@@ -158,6 +184,10 @@ class HeartRateAnalyzer:
                 'time_range': f"{section2_range[0]} to {section2_range[1]}",
                 'average_hr': section2_avg['average_hr'],
                 'average_pace': section2_avg['average_pace']
+            },
+            'overall': {
+                'average_hr': overall_avg['average_hr'],
+                'average_pace': overall_avg['average_pace']
             },
             'heart_rate': {
                 'difference': hr_diff,
