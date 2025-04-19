@@ -7,8 +7,14 @@ import json
 from flask_cors import CORS
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.heart_rate_analyzer import HeartRateAnalyzer
-import matplotlib
-matplotlib.use('Agg')  # Use Agg backend for non-interactive plotting
+
+# Try to import matplotlib, but make it optional
+try:
+    import matplotlib
+    matplotlib.use('Agg')  # Use Agg backend for non-interactive plotting
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes with all origins
@@ -119,26 +125,33 @@ def analyze():
         analyzer = HeartRateAnalyzer(filepath)
         analyzer.load_data()
         
-        # Generate plot with highlighted sections
-        plot_filename = os.path.join(app.config['UPLOAD_FOLDER'], 'analysis_plot.png')
-        analyzer.plot_data(
-            (section1_start_sec, section1_end_sec),
-            (section2_start_sec, section2_end_sec),
-            plot_filename
-        )
-        
         # Get analysis results
         result = analyzer.compare_sections(
             (section1_start_sec, section1_end_sec),
             (section2_start_sec, section2_end_sec)
         )
         
+        # Generate plot if matplotlib is available
+        plot_url = None
+        if MATPLOTLIB_AVAILABLE:
+            try:
+                plot_filename = os.path.join(app.config['UPLOAD_FOLDER'], 'analysis_plot.png')
+                analyzer.plot_data(
+                    (section1_start_sec, section1_end_sec),
+                    (section2_start_sec, section2_end_sec),
+                    plot_filename
+                )
+                plot_url = '/plot'
+            except Exception as e:
+                print(f"Plot generation failed: {str(e)}")
+                plot_url = None
+        
         # Clean up the uploaded file
         os.remove(filepath)
         
         return jsonify({
             'success': True,
-            'plot_url': '/plot',
+            'plot_url': plot_url,
             'results': result
         })
         

@@ -4,9 +4,15 @@ import gpxpy
 import numpy as np
 from typing import Tuple, List, Union
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-from matplotlib.dates import DateFormatter
 import pandas as pd
+
+# Make matplotlib optional
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.dates import DateFormatter
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
 
 class HeartRateAnalyzer:
     def __init__(self, file_path: str):
@@ -198,6 +204,9 @@ class HeartRateAnalyzer:
         
     def plot_data(self, section1_range, section2_range, output_file=None):
         """Plot heart rate and pace data with highlighted sections."""
+        if not MATPLOTLIB_AVAILABLE:
+            raise ImportError("matplotlib is not available in this environment. Plotting is disabled.")
+            
         if self.data is None:
             raise ValueError("No data loaded. Call load_data() first.")
             
