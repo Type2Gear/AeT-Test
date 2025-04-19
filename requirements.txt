@@ -7,8 +7,6 @@ gpxpy==1.6.2
 itsdangerous==2.2.0
 Jinja2==3.1.6
 MarkupSafe==3.0.2
-numpy==1.26.4; python_version < '3.12'
-pandas==2.2.1; python_version < '3.12'
 python-dateutil==2.9.0.post0
 pytz==2025.2
 six==1.17.0
