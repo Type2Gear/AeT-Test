@@ -1,6 +1,8 @@
 fitparse==1.2.0
 gpxpy==1.6.2
-numpy==1.24.3
+numpy==1.26.4
 matplotlib==3.9.4
 flask==3.0.2
-werkzeug==3.0.1 
+werkzeug==3.0.1
+pandas==2.2.3
+flask-cors==5.0.1
