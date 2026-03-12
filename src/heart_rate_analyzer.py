@@ -1,24 +1,12 @@
 import os
 from fitparse import FitFile
 import gpxpy
-from typing import Tuple, List, Union, Dict, Any
+import numpy as np
+from typing import Tuple, List, Union
 from datetime import datetime, timedelta
-
-# Make scientific computing packages optional
-try:
-    import numpy as np
-    import pandas as pd
-    SCIENTIFIC_AVAILABLE = True
-except ImportError:
-    SCIENTIFIC_AVAILABLE = False
-
-# Make matplotlib optional
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.dates import DateFormatter
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
+import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
+import pandas as pd
 
 class HeartRateAnalyzer:
     def __init__(self, file_path: str):
@@ -42,7 +30,7 @@ class HeartRateAnalyzer:
             raise ValueError("No data found in the file.")
             
         # Store the start time
-        self.start_time = self.data[0]['timestamp']
+        self.start_time = self.data['timestamp'][0]
         
     def _load_fit(self) -> None:
         """Load and parse a .fit file."""
@@ -56,13 +44,19 @@ class HeartRateAnalyzer:
                 data[field.name] = field.value
             records.append(data)
             
-        # Convert to DataFrame if available, otherwise use list of dicts
-        if SCIENTIFIC_AVAILABLE:
-            self.data = pd.DataFrame(records)
-            if 'timestamp' in self.data.columns:
-                self.data['timestamp'] = pd.to_datetime(self.data['timestamp'])
-        else:
-            self.data = records
+        # Convert to DataFrame
+        self.data = pd.DataFrame(records)
+
+        # Convert timestamp to datetime
+        if 'timestamp' in self.data.columns:
+            self.data['timestamp'] = pd.to_datetime(self.data['timestamp'])
+
+        # Derive speed (m/s) from cumulative distance if not present
+        if ('speed' not in self.data.columns or self.data['speed'].isna().all()) and \
+                'distance' in self.data.columns:
+            dist = self.data['distance'].ffill().fillna(0)
+            dt = self.data['timestamp'].diff().dt.total_seconds().fillna(1).clip(lower=1)
+            self.data['speed'] = dist.diff().fillna(0).clip(lower=0) / dt
             
     def _load_gpx(self) -> None:
         """Load and parse a .gpx file."""
@@ -80,75 +74,37 @@ class HeartRateAnalyzer:
                     }
                     records.append(data)
                     
-        # Convert to DataFrame if available, otherwise use list of dicts
-        if SCIENTIFIC_AVAILABLE:
-            self.data = pd.DataFrame(records)
-        else:
-            self.data = records
-            
-    def get_preview_data(self) -> Dict[str, Any]:
+        # Convert to DataFrame
+        self.data = pd.DataFrame(records)
+        
+    def get_preview_data(self):
         """Get the full dataset for preview visualization."""
         if self.data is None:
             raise ValueError("No data loaded. Call load_data() first.")
             
         # Convert timestamps to seconds from start
-        if SCIENTIFIC_AVAILABLE:
-            timestamps = [(ts - self.start_time).total_seconds() for ts in self.data['timestamp']]
-            heart_rate = self.data['heart_rate'].tolist()
-            speed = [s * 3.6 if s else 0 for s in self.data['speed'].tolist()]
-        else:
-            timestamps = [(record['timestamp'] - self.start_time).total_seconds() for record in self.data]
-            heart_rate = [record.get('heart_rate') for record in self.data]
-            speed = [record.get('speed', 0) * 3.6 if record.get('speed') else 0 for record in self.data]
-            
+        timestamps = [(ts - self.start_time).total_seconds() for ts in self.data['timestamp']]
+        
         return {
             'timestamps': timestamps,
-            'heart_rate': heart_rate,
-            'speed': speed,
+            'heart_rate': self.data['heart_rate'].tolist(),
+            'speed': [s * 3.6 if s else 0 for s in self.data['speed'].tolist()],  # Convert to km/h
             'total_time': timestamps[-1],
             'time_unit': 'seconds'
         }
         
-    def get_section_data(self, start_time: Union[str, float], end_time: Union[str, float]):
+    def get_section_data(self, start_time, end_time):
         """Get data for a specific time section."""
         if self.data is None:
             raise ValueError("No data loaded. Call load_data() first.")
             
-        # Convert time strings in HH:MM:SS format to seconds
-        def time_to_seconds(time_str: Union[str, float]) -> float:
-            if isinstance(time_str, (int, float)):
-                return float(time_str)
-            
-            # Parse HH:MM:SS format
-            parts = time_str.split(':')
-            if len(parts) == 3:
-                hours, minutes, seconds = map(float, parts)
-                return hours * 3600 + minutes * 60 + seconds
-            elif len(parts) == 2:
-                minutes, seconds = map(float, parts)
-                return minutes * 60 + seconds
-            else:
-                try:
-                    return float(time_str)
-                except ValueError:
-                    raise ValueError(f"Invalid time format: {time_str}. Use HH:MM:SS or seconds.")
-        
-        # Convert time strings to seconds and then to datetime objects
-        start_seconds = time_to_seconds(start_time)
-        end_seconds = time_to_seconds(end_time)
-        
-        start_dt = self.start_time + timedelta(seconds=start_seconds)
-        end_dt = self.start_time + timedelta(seconds=end_seconds)
+        # Convert time strings to datetime objects
+        start_dt = self.start_time + pd.Timedelta(seconds=float(start_time))
+        end_dt = self.start_time + pd.Timedelta(seconds=float(end_time))
         
         # Filter data for the section
-        if SCIENTIFIC_AVAILABLE:
-            mask = (self.data['timestamp'] >= start_dt) & (self.data['timestamp'] <= end_dt)
-            section_data = self.data[mask]
-        else:
-            section_data = [
-                record for record in self.data
-                if start_dt <= record['timestamp'] <= end_dt
-            ]
+        mask = (self.data['timestamp'] >= start_dt) & (self.data['timestamp'] <= end_dt)
+        section_data = self.data[mask]
         
         if len(section_data) == 0:
             raise ValueError(f"No data found in the specified time range: {start_time} to {end_time}")
@@ -157,29 +113,16 @@ class HeartRateAnalyzer:
         
     def calculate_averages(self, section_data):
         """Calculate average heart rate and pace for a section."""
-        if SCIENTIFIC_AVAILABLE:
-            # Calculate average heart rate
-            avg_hr = section_data['heart_rate'].mean()
-            
-            # Calculate average pace (min/km)
-            speeds = section_data['speed'].dropna()
-            if len(speeds) > 0:
-                avg_speed = speeds.mean()  # m/s
-                avg_pace = 16.6667 / avg_speed if avg_speed > 0 else None  # min/km
-            else:
-                avg_pace = None
+        # Calculate average heart rate
+        avg_hr = section_data['heart_rate'].mean()
+        
+        # Calculate average pace (min/km)
+        speeds = section_data['speed'].dropna()
+        if len(speeds) > 0:
+            avg_speed = speeds.mean()  # m/s
+            avg_pace = 16.6667 / avg_speed if avg_speed > 0 else None  # min/km
         else:
-            # Calculate average heart rate
-            heart_rates = [record['heart_rate'] for record in section_data if record.get('heart_rate') is not None]
-            avg_hr = sum(heart_rates) / len(heart_rates) if heart_rates else None
-            
-            # Calculate average pace (min/km)
-            speeds = [record['speed'] for record in section_data if record.get('speed') is not None]
-            if speeds:
-                avg_speed = sum(speeds) / len(speeds)  # m/s
-                avg_pace = 16.6667 / avg_speed if avg_speed > 0 else None  # min/km
-            else:
-                avg_pace = None
+            avg_pace = None
             
         return {
             'average_hr': avg_hr,
@@ -195,13 +138,6 @@ class HeartRateAnalyzer:
         # Calculate averages for both sections
         section1_avg = self.calculate_averages(section1_data)
         section2_avg = self.calculate_averages(section2_data)
-        
-        # Calculate overall averages
-        if SCIENTIFIC_AVAILABLE:
-            combined_data = pd.concat([section1_data, section2_data])
-        else:
-            combined_data = section1_data + section2_data
-        overall_avg = self.calculate_averages(combined_data)
         
         # Calculate differences
         hr_diff = section2_avg['average_hr'] - section1_avg['average_hr']
@@ -230,10 +166,6 @@ class HeartRateAnalyzer:
                 'average_hr': section2_avg['average_hr'],
                 'average_pace': section2_avg['average_pace']
             },
-            'overall': {
-                'average_hr': overall_avg['average_hr'],
-                'average_pace': overall_avg['average_pace']
-            },
             'heart_rate': {
                 'difference': hr_diff,
                 'percent_difference': hr_percent_diff
@@ -243,9 +175,6 @@ class HeartRateAnalyzer:
         
     def plot_data(self, section1_range, section2_range, output_file=None):
         """Plot heart rate and pace data with highlighted sections."""
-        if not MATPLOTLIB_AVAILABLE:
-            raise ImportError("matplotlib is not available in this environment. Plotting is disabled.")
-            
         if self.data is None:
             raise ValueError("No data loaded. Call load_data() first.")
             
@@ -254,22 +183,16 @@ class HeartRateAnalyzer:
         ax2 = ax1.twinx()
         
         # Convert timestamps to seconds from start for x-axis
-        if SCIENTIFIC_AVAILABLE:
-            timestamps = [(ts - self.start_time).total_seconds() for ts in self.data['timestamp']]
-            heart_rate = self.data['heart_rate']
-            speeds = [s * 3.6 if s else 0 for s in self.data['speed']]
-        else:
-            timestamps = [(record['timestamp'] - self.start_time).total_seconds() for record in self.data]
-            heart_rate = [record.get('heart_rate') for record in self.data]
-            speeds = [record.get('speed', 0) * 3.6 if record.get('speed') else 0 for record in self.data]
+        timestamps = [(ts - self.start_time).total_seconds() for ts in self.data['timestamp']]
         
         # Plot heart rate
-        ax1.plot(timestamps, heart_rate, 'b-', label='Heart Rate')
+        ax1.plot(timestamps, self.data['heart_rate'], 'b-', label='Heart Rate')
         ax1.set_xlabel('Time (seconds)')
         ax1.set_ylabel('Heart Rate (BPM)', color='b')
         ax1.tick_params(axis='y', labelcolor='b')
         
         # Plot speed (converted to km/h)
+        speeds = [s * 3.6 if s else 0 for s in self.data['speed']]  # Convert m/s to km/h
         ax2.plot(timestamps, speeds, 'r-', label='Speed')
         ax2.set_ylabel('Speed (km/h)', color='r')
         ax2.tick_params(axis='y', labelcolor='r')

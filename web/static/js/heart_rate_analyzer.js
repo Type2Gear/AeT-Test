@@ -3,7 +3,6 @@ class HeartRateAnalyzer {
         this.data = [];
         this.startTime = null;
         this.fileType = null;
-        this.initializeEventListeners();
     }
 
     initializeEventListeners() {
@@ -93,14 +92,31 @@ class HeartRateAnalyzer {
                         if (data.record && data.record.heart_rate && data.record.timestamp) {
                             this.data.push({
                                 timestamp: new Date(data.record.timestamp).getTime(),
-                                heartRate: data.record.heart_rate,
-                                speed: data.record.speed ? data.record.speed * 3.6 : null // Convert m/s to km/h
+                                heart_rate: data.record.heart_rate,
+                                speed: data.record.speed != null ? data.record.speed * 3.6 : null, // m/s to km/h
+                                distance: data.record.distance ?? null
                             });
                         }
                     });
 
                     parser.on('end', () => {
                         this.data.sort((a, b) => a.timestamp - b.timestamp);
+                        // Derive speed from cumulative distance deltas if speed is absent
+                        const hasDistance = this.data.some(d => d.distance != null);
+                        const missingSpeed = this.data.some(d => d.speed === null);
+                        if (missingSpeed && hasDistance) {
+                            for (let i = 0; i < this.data.length; i++) {
+                                if (this.data[i].speed === null) {
+                                    if (i === 0) {
+                                        this.data[i].speed = 0;
+                                    } else {
+                                        const dDist = (this.data[i].distance ?? 0) - (this.data[i - 1].distance ?? 0);
+                                        const dTime = (this.data[i].timestamp - this.data[i - 1].timestamp) / 1000;
+                                        this.data[i].speed = dTime > 0 ? (dDist / dTime) * 3.6 : 0; // m/s to km/h
+                                    }
+                                }
+                            }
+                        }
                         resolve();
                     });
 
@@ -126,7 +142,7 @@ class HeartRateAnalyzer {
         return {
             timestamps: timestamps,
             heart_rate: this.data.map(d => d.heart_rate),
-            speed: this.data.map(d => d.speed ? d.speed * 3.6 : 0), // Convert to km/h
+            speed: this.data.map(d => d.speed ?? 0),
             total_time: timestamps[timestamps.length - 1],
             time_unit: 'seconds'
         };
@@ -341,166 +357,3 @@ class HeartRateAnalyzer {
         }
     }
 }
-
-// Initialize the analyzer and set up event listeners
-document.addEventListener('DOMContentLoaded', () => {
-    const analyzer = new HeartRateAnalyzer();
-    let previewChart = null;
-    let resultsChart = null;
-
-    // File upload handling
-    const fileInput = document.getElementById('fileInput');
-    const uploadButton = document.getElementById('uploadButton');
-    const previewSection = document.getElementById('previewSection');
-    const resultsSection = document.getElementById('resultsSection');
-
-    uploadButton.addEventListener('click', () => {
-        fileInput.click();
-    });
-
-    fileInput.addEventListener('change', async (e) => {
-        if (e.target.files.length === 0) return;
-
-        try {
-            await analyzer.loadFile(e.target.files[0]);
-            const previewData = analyzer.getPreviewData();
-            updatePreviewChart(previewData);
-            previewSection.style.display = 'block';
-            resultsSection.style.display = 'none';
-        } catch (error) {
-            alert(error.message);
-        }
-    });
-
-    // Range slider handling
-    const startRange = document.getElementById('startRange');
-    const endRange = document.getElementById('endRange');
-    const startTime = document.getElementById('startTime');
-    const endTime = document.getElementById('endTime');
-    const analyzeButton = document.getElementById('analyzeButton');
-
-    function updateTimeDisplay() {
-        const start = formatTime(startRange.value);
-        const end = formatTime(endRange.value);
-        startTime.textContent = start;
-        endTime.textContent = end;
-    }
-
-    function formatTime(seconds) {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    startRange.addEventListener('input', updateTimeDisplay);
-    endRange.addEventListener('input', updateTimeDisplay);
-
-    analyzeButton.addEventListener('click', () => {
-        if (!analyzer.data) {
-            alert('Please upload a file first');
-            return;
-        }
-
-        try {
-            const result = analyzer.compareSections(
-                [parseFloat(startRange.value), parseFloat(endRange.value)],
-                [parseFloat(endRange.value), parseFloat(endRange.value) + 300] // 5 minutes after end
-            );
-            updateResults(result);
-            resultsSection.style.display = 'block';
-        } catch (error) {
-            alert(error.message);
-        }
-    });
-
-    function updatePreviewChart(data) {
-        if (previewChart) {
-            previewChart.destroy();
-        }
-
-        const ctx = document.getElementById('previewChart').getContext('2d');
-        previewChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.timestamps,
-                datasets: [
-                    {
-                        label: 'Heart Rate (BPM)',
-                        data: data.heart_rate,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Speed (km/h)',
-                        data: data.speed,
-                        borderColor: 'rgb(255, 99, 132)',
-                        tension: 0.1,
-                        yAxisID: 'y1'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Heart Rate (BPM)'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Speed (km/h)'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function updateResults(result) {
-        // Update the results table
-        document.getElementById('section1Hr').textContent = 
-            result.section1.average_hr ? result.section1.average_hr.toFixed(1) : 'N/A';
-        document.getElementById('section1Pace').textContent = 
-            result.section1.average_pace ? result.section1.average_pace.toFixed(2) : 'N/A';
-        document.getElementById('section2Hr').textContent = 
-            result.section2.average_hr ? result.section2.average_hr.toFixed(1) : 'N/A';
-        document.getElementById('section2Pace').textContent = 
-            result.section2.average_pace ? result.section2.average_pace.toFixed(2) : 'N/A';
-        document.getElementById('hrDiff').textContent = 
-            result.heart_rate.difference ? result.heart_rate.difference.toFixed(1) : 'N/A';
-        document.getElementById('hrPercentDiff').textContent = 
-            result.heart_rate.percent_difference ? result.heart_rate.percent_difference.toFixed(1) : 'N/A';
-
-        // Update the pace-to-heart rate ratio if available
-        const phrSection = document.getElementById('phrSection');
-        if (result.pace_heart_rate_ratio) {
-            phrSection.style.display = 'block';
-            document.getElementById('phr1').textContent = 
-                result.pace_heart_rate_ratio.section1.toFixed(3);
-            document.getElementById('phr2').textContent = 
-                result.pace_heart_rate_ratio.section2.toFixed(3);
-            document.getElementById('phrDiff').textContent = 
-                result.pace_heart_rate_ratio.percent_difference.toFixed(1);
-        } else {
-            phrSection.style.display = 'none';
-        }
-    }
-}); 
